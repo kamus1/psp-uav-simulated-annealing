@@ -8,11 +8,6 @@ make
 ```
 Genera el ejecutable `./PSP-UAV`.
 
-Para recompilar desde cero:
-```bash
-make clean
-make
-```
 `make clean` elimina binarios previos.
 
 ## Ejecución
