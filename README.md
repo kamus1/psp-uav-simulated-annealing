@@ -26,7 +26,7 @@ Genera el ejecutable `./PSP-UAV`.
 ```
 
 
-## Salida esperada
+## Salida
 En consola se imprime la urgencia acumulada, la ventana T usada, la cantidad de drones, el tiempo de ejecución y la ruta completa de cada dron (indicando su base de origen). Con `--export` se generan los CSV mencionados en la carpeta `exported_data/`.
 
 
