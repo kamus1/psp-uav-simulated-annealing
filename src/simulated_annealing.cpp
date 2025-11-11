@@ -18,7 +18,7 @@ namespace {
     const double SA_FACTOR_ENFRIAMIENTO = 0.995;
     const double SA_SHIFT_BASE_WEIGHT = 5.0;
     const double SA_SHIFT_PROB_MAX = 0.65;
-    const double SA_RESOLUCION_BASE = 2.0;
+    const double SA_RESOLUCION_BASE = 2.0;     //prob movimiento resolución de colisiones
     const double SA_RESOLUCION_PROB_MAX = 0.5;
 }
 
@@ -150,15 +150,15 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
 
 
         /**/
-        //solo cada 10 iteraciones
+        
         // NOTA: lo mas eficiente sería solamente recalcular los segmentos de ruta que realmente cambiaron
         static RutaTick rutasActuales;
         static std::vector<ColisionDetalle> detallesColision;
 
-        if (iter == 0 || iter % 10 == 0) {
-            rutasActuales = Decodificador::generarRutaPorTick(grid, actual, Tticks);
-            detallesColision = detectarColisiones(rutasActuales);
-        }
+        //if (iter == 0 || iter % 10 == 0) {
+        rutasActuales = Decodificador::generarRutaPorTick(grid, actual, Tticks);
+        detallesColision = detectarColisiones(rutasActuales);
+        //}
             
         
         //auto rutasActuales = Decodificador::generarRutaPorTick(grid, actual, Tticks);

@@ -22,7 +22,7 @@ Genera el ejecutable `./PSP-UAV`.
 
 ### Ejemplo
 ```bash
-./PSP-UAV instancias/PSP-UAV_01_a.txt 5 3000 50 --export
+./PSP-UAV instancias/PSP-UAV_01_a.txt 3 3000 50 --export
 ```
 
 
