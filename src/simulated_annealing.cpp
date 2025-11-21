@@ -43,6 +43,7 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
 
     // variables de la temperatura controladas por las constantes globales
     double T = SA_TEMPERATURA_INICIAL; 
+    int colisionesConsecutivas = 0; // cuántas iteraciones seguidas se observan colisiones
 
     // struct para describir una colisión: en que tick, en que celda y que drones.
     struct ColisionDetalle {
@@ -185,8 +186,40 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
                             (static_cast<double>(colisionesActuales) + SA_RESOLUCION_BASE);
             probResolucion = std::min(SA_RESOLUCION_PROB_MAX, rawRes);
         }
+        // aumenta con el número de iteraciones consecutivas con colisiones
+        if (colisionesActuales > 0) {
+            ++colisionesConsecutivas;
+        } else {
+            colisionesConsecutivas = 0;
+        }
+        double probWait = 0.0;
+        if (colisionesActuales > 0) {
+            double extra = 0.08 * std::min(colisionesConsecutivas, 10);
+            probWait = std::min(0.9, 0.25 + extra); // prioridad sobre shift/resolución
+        }
+        bool aplicarWait = !detallesColision.empty() &&
+            std::uniform_real_distribution<>(0.0, 1.0)(rng) < probWait;
 
-        if (aplicarShift) {
+        if (aplicarWait) {
+            // inserta un "wait" (mantener posición) en uno de los drones en colisión
+            const auto& detalle = detallesColision[rng() % detallesColision.size()];
+            int dronWait = detalle.drones[rng() % detalle.drones.size()];
+            int tickColision = detalle.tick;
+            const auto& rutaDron = rutasActuales[dronWait];
+            Pos posColision = (detalle.tick >= 0 && detalle.tick < static_cast<int>(rutaDron.size()))
+                                  ? rutaDron[detalle.tick]
+                                  : (!rutaDron.empty() ? rutaDron.back() : baseDeDron(dronWait));
+            if (dronWait < 0 || dronWait >= nDrones)
+                continue;
+            int idxInsert = 0;
+            if (!vecino[dronWait].empty()) {
+                double ratio = static_cast<double>(tickColision) / std::max(1, Tticks);
+                idxInsert = std::clamp(static_cast<int>(ratio * static_cast<double>(vecino[dronWait].size())),
+                                       0, static_cast<int>(vecino[dronWait].size()));
+            }
+            vecino[dronWait].insert(vecino[dronWait].begin() + idxInsert, posColision);
+            registrarCambio(dronWait, idxInsert);
+        } else if (aplicarShift) {
             int d = rng() % nDrones;
             if (vecino[d].size() <= 1)
                 continue;
@@ -277,7 +310,7 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
                     if (vecino[d].empty())
                         continue;
                     int idxMin = 0;
-                    int pesoMin = pesoUrgencia(vecino[d][0]);
+                    int pesoMin = pesoUrgencia(vecino[d][idxMin]);
                     for (size_t idx = 1; idx < vecino[d].size(); ++idx) {
                         int pesoActual = pesoUrgencia(vecino[d][idx]);
                         if (pesoActual < pesoMin) {
