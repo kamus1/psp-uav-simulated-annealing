@@ -2,6 +2,7 @@
 #include "solucion.h"
 #include "evaluador.h"
 #include "decodificador.h"
+#include "ruta_planner.h"
 #include <random>
 #include <chrono>
 #include <cmath>
@@ -34,7 +35,9 @@ Parámetros:
 std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int nDrones, int Tticks, int Kiter) {
     // generar solucion inicial
     auto actual = GeneradorSolucion::generarRoundRobin(grid, nDrones); 
-    int scoreActual = Evaluador::evaluar(grid, actual, Tticks);
+    RutaPlanner planner(grid, Tticks, nDrones);
+    planner.generarCompleto(actual);
+    int scoreActual = Evaluador::evaluarConRutas(grid, planner.rutas(), Tticks);
     auto mejor = actual;
     int mejorScore = scoreActual;
 
@@ -107,7 +110,8 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
                 mejorPos = pos;
             }
         }
-        rutas[destino].insert(rutas[destino].begin() + mejorPos, celda);
+        rutas[destino].insert(rutas[destino].begin() + static_cast<long long>(mejorPos), celda);
+        return mejorPos;
     };
 
     
@@ -145,24 +149,22 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
     for (int iter = 0; iter < Kiter; ++iter)
     {
         auto vecino = actual;
+        std::vector<int> primerCambio(nDrones, -1);
+        auto registrarCambio = [&](int d, int idx) {
+            if (d < 0 || d >= nDrones) return;
+            if (idx < 0) idx = 0;
+            if (primerCambio[d] == -1 || idx < primerCambio[d]) {
+                primerCambio[d] = idx;
+            }
+        };
 
         // reconstruye la ruta temporal completa para detectar colisiones reales por tick
 
 
         /**/
         
-        // NOTA: lo mas eficiente sería solamente recalcular los segmentos de ruta que realmente cambiaron
-        static RutaTick rutasActuales;
-        static std::vector<ColisionDetalle> detallesColision;
-
-        //if (iter == 0 || iter % 10 == 0) {
-        rutasActuales = Decodificador::generarRutaPorTick(grid, actual, Tticks);
-        detallesColision = detectarColisiones(rutasActuales);
-        //}
-            
-        
-        //auto rutasActuales = Decodificador::generarRutaPorTick(grid, actual, Tticks);
-        //auto detallesColision = detectarColisiones(rutasActuales);
+        auto rutasActuales = planner.rutas();
+        auto detallesColision = detectarColisiones(rutasActuales);
 
         int colisionesActuales = 0;
         for (const auto& detalle : detallesColision) {
@@ -189,6 +191,7 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
             if (vecino[d].size() <= 1)
                 continue;
             std::rotate(vecino[d].begin(), vecino[d].begin() + 1, vecino[d].end());
+            registrarCambio(d, 0);
         } else {
             bool aplicarResolucion = !detallesColision.empty() &&
                 std::uniform_real_distribution<>(0.0, 1.0)(rng) < probResolucion;
@@ -208,10 +211,12 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
                 int receptor = (donante == dronA) ? dronB : dronA;
                 if (vecino[donante].empty())
                     continue;
-                int idx = rng() % vecino[donante].size();
+                int idx = rng() % vecino[donante].size(); // idx random del donante
                 Pos celda = vecino[donante][idx];
                 vecino[donante].erase(vecino[donante].begin() + idx);
-                insertarHeuristico(vecino, receptor, celda);
+                registrarCambio(donante, idx);
+                size_t insertado = insertarHeuristico(vecino, receptor, celda);
+                registrarCambio(receptor, static_cast<int>(insertado));
             } else {
                 int movimiento = rng() % 5;
 
@@ -225,6 +230,7 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
                     if (i == j)
                         continue;
                     std::swap(vecino[d][i], vecino[d][j]);
+                    registrarCambio(d, std::min(i, j));
                 } else if (movimiento == 1) {
                     // mover una celda de un dron a otro preservando la heurística de inserción
                     int origen = rng() % nDrones;
@@ -234,7 +240,9 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
                     int idx = rng() % vecino[origen].size();
                     Pos celda = vecino[origen][idx];
                     vecino[origen].erase(vecino[origen].begin() + idx);
-                    insertarHeuristico(vecino, destino, celda);
+                    registrarCambio(origen, idx);
+                    size_t inserted = insertarHeuristico(vecino, destino, celda);
+                    registrarCambio(destino, static_cast<int>(inserted));
                 } else if (movimiento == 2) {
                     // intercambio directo de visitas entre dos drones
                     int origen = rng() % nDrones;
@@ -246,6 +254,8 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
                     int idxOrigen = rng() % vecino[origen].size();
                     int idxDestino = rng() % vecino[destino].size();
                     std::swap(vecino[origen][idxOrigen], vecino[destino][idxDestino]);
+                    registrarCambio(origen, idxOrigen);
+                    registrarCambio(destino, idxDestino);
                 } else if (movimiento == 3) {
                     // inversión de un subcamino, útil para alterar trayectos largos
                     int d = rng() % nDrones;
@@ -255,6 +265,7 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
                     int j = rng() % (vecino[d].size() - i - 1) + i + 1;
                     if (j - i >= 1) {
                         std::reverse(vecino[d].begin() + i, vecino[d].begin() + j + 1);
+                        registrarCambio(d, i);
                     } else {
                         continue;
                     }
@@ -284,11 +295,14 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
                         }
                     }
                     if (!reemplazo) continue;
+                    registrarCambio(d, idxMin);
                 }
             }
         }
 
-        int scoreVecino = Evaluador::evaluar(grid, vecino, Tticks);
+        auto plannerVecino = planner;
+        plannerVecino.actualizar(vecino, primerCambio);
+        int scoreVecino = Evaluador::evaluarConRutas(grid, plannerVecino.rutas(), Tticks);
         int delta = scoreVecino - scoreActual;
 
         // aceptar la solución vecina si es mejor o con cierta probabilidad, según la temperatura (SA)
@@ -300,12 +314,11 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
                 mejor = vecino;
                 mejorScore = scoreVecino;
 
-                // si es mejor solucion se generan rutas por tick y se cuentan colisiones
-                auto rutasTick = Decodificador::generarRutaPorTick(grid, mejor, Tticks);
-                int colisiones = Decodificador::contarColisiones(rutasTick, grid);
+                int colisiones = Decodificador::contarColisiones(plannerVecino.rutas(), grid);
 
                 std::cout << "[+] Nueva mejor solución: " << mejorScore << " | Colisiones: " << colisiones << "\n";
             }
+            planner = plannerVecino;
         }
 
         T *= SA_FACTOR_ENFRIAMIENTO; // se reduce la temperatura por factor alpha

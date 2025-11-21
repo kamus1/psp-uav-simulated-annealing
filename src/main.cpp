@@ -5,8 +5,10 @@
 #include "decodificador.h"
 #include "evaluador.h"
 #include "simulated_annealing.h"
+#include "time_stats.h"
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 
 
 // función para exportar datos a csv, recibe el grid, las rutas y la carpeta donde se exportarán los archivos
@@ -65,13 +67,23 @@ int main(int argc, char* argv[]) {
     int drones = std::stoi(argv[2]); // cantidad drones
     int K = std::stoi(argv[3]);  // iteraciones SA
     int T = std::stoi(argv[4]);  // duración de operación
-
+    bool exportar = false;
+    bool mostrarTiempos = false;
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--export") {
+            exportar = true;
+        } else if (arg == "--times") {
+            mostrarTiempos = true;
+        }
+    }
 
     // se guarda en grid la grilla leida desde el archivo con la funcion Parser::leerInstancia
     Grid grid = Parser::leerInstancia(ruta);
 
 
     std::cout << "### Ejecutando Simulated Annealing con " << drones << " drones, " << K << " iteraciones, " << T << " ticks...\n";
+    TimeStats::reset();
     auto start = std::chrono::steady_clock::now();
     auto mejorSecuencia = SimulatedAnnealing::ejecutar(grid, drones, T, K);     // se ejecuta el algoritmo Simulated Annealing
     auto end = std::chrono::steady_clock::now(); 
@@ -87,6 +99,12 @@ int main(int argc, char* argv[]) {
     std::cout << "Ventana de operación T: " << T << "\n";
     std::cout << "Drones Utilizados: " << drones << "\n"; 
     std::cout << "Tiempo de ejecución: " << segundos << " segundos\n";
+    if (mostrarTiempos) {
+        std::cout << std::fixed << std::setprecision(6);
+        std::cout << "Tiempo acumulado Evaluador: " << TimeStats::totalEvaluador() << " segundos\n";
+        std::cout << "Tiempo acumulado Decodificador: " << TimeStats::totalDecodificador() << " segundos\n";
+        std::cout.unsetf(std::ios::floatfield);
+    }
     std::cout << "Rutas:\n";
 
 
@@ -109,14 +127,6 @@ int main(int argc, char* argv[]) {
 
 
     // se exportan los datos a csv si flag --export es proporcionada
-    bool exportar = false;
-    for (int i = 1; i < argc; ++i) {
-        if (std::string(argv[i]) == "--export") {
-            exportar = true;
-            break;
-        }
-    }
-    
     if (exportar) {
         exportarCSV(grid, rutasTick, "exported_data");
     }
@@ -125,7 +135,6 @@ int main(int argc, char* argv[]) {
     return 0;
     
 }
-
 
 
 

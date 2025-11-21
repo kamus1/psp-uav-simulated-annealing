@@ -5,4 +5,5 @@
 class Evaluador {
 public:
     static int evaluar(const Grid& grid, const std::vector<std::vector<Pos>>& secuencias, int T, int penalizacionColision = 100000);
+    static int evaluarConRutas(const Grid& grid, const RutaTick& rutas, int T, int penalizacionColision = 100000);
 };

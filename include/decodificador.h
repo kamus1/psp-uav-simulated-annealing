@@ -1,9 +1,8 @@
 #pragma once
 #include "grid.h"
+#include "ruta_types.h"
 #include <vector>
 #include <map>
-
-using RutaTick = std::vector<std::vector<Pos>>;  // ruta[dron][tick] = Pos
 
 class Decodificador {
 public:

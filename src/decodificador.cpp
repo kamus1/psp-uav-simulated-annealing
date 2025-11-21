@@ -1,83 +1,11 @@
 #include "decodificador.h"
-#include <queue>
+#include "time_stats.h"
+#include "a_star.h"
 #include <set>
 #include <map>
-#include <cmath>
 #include <iostream>
 #include <algorithm>
-
-// este codigo calcula los caminos reales con A* y detecta colisiones.
-
-namespace {
-
-// coste para moverse a vecino (siempre 1, es usado por A*)
-int costo(const Pos&, const Pos&) {
-    return 1;
-}
-
-// Heurística de A* (distancia Manhattan)
-int heuristica(const Pos& a, const Pos& b) {
-    return std::abs(a.row - b.row) + std::abs(a.col - b.col);
-}
-
-// obtener vecinos validos (8 direcciones + quieto)
-//calcula movimientos posibles desde p
-std::vector<Pos> vecinos(const Grid& grid, const Pos& p) {
-    std::vector<Pos> res; // almacena vecinos validos
-
-    // recorre delta de fila/columna en {-1,0,1}
-    for (int dr = -1; dr <= 1; ++dr) {
-        for (int dc = -1; dc <= 1; ++dc) {
-            int nr = p.row + dr;
-            int nc = p.col + dc;
-            if (dr == 0 && dc == 0) continue;
-            if (grid.esValida(nr, nc) && !grid.celdas[nr][nc].esObstaculo) {
-                res.emplace_back(nr, nc);
-            }
-        }
-    }
-    res.push_back(p);  //opcion de quedarse quieto
-    return res;
-}
-
-// A* para encontrar camino desde origen hasta destino
-std::vector<Pos> aStar(const Grid& grid, const Pos& start, const Pos& goal) {
-    std::priority_queue<std::pair<int, Pos>, std::vector<std::pair<int, Pos>>, std::greater<>> frontera; // min-heap por prioridad
-    frontera.emplace(0, start);
-
-    std::map<Pos, Pos> cameFrom;
-    std::map<Pos, int> costoActual;
-    cameFrom[start] = start;
-    costoActual[start] = 0;
-
-    while (!frontera.empty()) {
-        Pos actual = frontera.top().second;
-        frontera.pop();
-
-        if (actual == goal) break;
-
-        for (auto& next : vecinos(grid, actual)) {
-            int nuevoCosto = costoActual[actual] + costo(actual, next);
-            if (!costoActual.count(next) || nuevoCosto < costoActual[next]) {
-                costoActual[next] = nuevoCosto;
-                int prioridad = nuevoCosto + heuristica(next, goal);
-                frontera.emplace(prioridad, next);
-                cameFrom[next] = actual;
-            }
-        }
-    }
-
-    std::vector<Pos> path;
-    if (!cameFrom.count(goal)) return path;
-
-    for (Pos p = goal; p != start; p = cameFrom[p])
-        path.push_back(p);
-    path.push_back(start);
-    std::reverse(path.begin(), path.end());
-    return path;
-}
-
-} // namespace
+#include <chrono>
 
 
 /* generación de rutas por tick (simulación con A*)
@@ -85,6 +13,7 @@ std::vector<Pos> aStar(const Grid& grid, const Pos& start, const Pos& goal) {
     output: RutaTick: posición de cada dron en cada tick.
 */
 RutaTick Decodificador::generarRutaPorTick(const Grid& grid, const std::vector<std::vector<Pos>>& secuencias, int T) {
+    auto start = std::chrono::steady_clock::now();
     int nDrones = secuencias.size();
     RutaTick rutas(nDrones);
     std::vector<size_t> puntero(nDrones, 0); // índice del próximo objetivo en la secuencia del dron
@@ -116,12 +45,15 @@ RutaTick Decodificador::generarRutaPorTick(const Grid& grid, const std::vector<s
         }
     }
 
+    auto end = std::chrono::steady_clock::now();
+    TimeStats::addDecodificador(std::chrono::duration<double>(end - start).count());
     return rutas;
 }
 
 
 // detecta si hay colisiones de drones en las rutas
 bool Decodificador::hayColisiones(const RutaTick& rutas, const Grid& grid) {
+    auto start = std::chrono::steady_clock::now();
     int T = rutas[0].size(); //ticks simulados en cada ruta.
     int nDrones = rutas.size();
     bool hayConflictos = false;
@@ -151,12 +83,15 @@ bool Decodificador::hayColisiones(const RutaTick& rutas, const Grid& grid) {
         }
     }
 
+    auto end = std::chrono::steady_clock::now();
+    TimeStats::addDecodificador(std::chrono::duration<double>(end - start).count());
     return hayConflictos;
 }
 
 
 // conteo de colisiones
 int Decodificador::contarColisiones(const RutaTick& rutas, const Grid& grid) {
+    auto start = std::chrono::steady_clock::now();
     int T = rutas[0].size();
     int nDrones = rutas.size();
     int colisiones = 0;
@@ -183,5 +118,7 @@ int Decodificador::contarColisiones(const RutaTick& rutas, const Grid& grid) {
             if (++contador[pos] > 1) ++colisiones;
         }
     }
+    auto end = std::chrono::steady_clock::now();
+    TimeStats::addDecodificador(std::chrono::duration<double>(end - start).count());
     return colisiones;
 }
