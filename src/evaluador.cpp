@@ -35,8 +35,10 @@ int evaluarSobreRutas(const Grid& grid, const RutaTick& rutas, int T, int penali
         }
     }
 
-    if (Decodificador::hayColisiones(rutas, grid))
-        urgenciaTotal += penalizacionColision;
+    int colisiones = Decodificador::contarColisiones(rutas, grid);
+    if (colisiones > 0) {
+        urgenciaTotal += colisiones * penalizacionColision;
+    }
 
     return urgenciaTotal;
 }

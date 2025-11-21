@@ -50,6 +50,7 @@
         "filesystem": "cpp",
         "chrono": "cpp",
         "unordered_set": "cpp",
-        "queue": "cpp"
+        "queue": "cpp",
+        "iomanip": "cpp"
     }
 }
