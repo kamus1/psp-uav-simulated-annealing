@@ -76,6 +76,14 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
         return grid.bases[d % grid.bases.size()].posicion;
     };
 
+    auto primerTickFueraDeBase = [&](int d, const std::vector<Pos>& ruta) {
+        Pos base = baseDeDron(d);
+        for (size_t t = 0; t < ruta.size(); ++t) {
+            if (ruta[t] != base) return static_cast<int>(t);
+        }
+        return static_cast<int>(ruta.size());
+    };
+
     // insertar una celda en la ruta de manera heurística
     auto insertarHeuristico = [&](std::vector<std::vector<Pos>>& rutas, int destino, const Pos& celda) {
         size_t mejorPos = 0;
@@ -120,19 +128,21 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
     auto detectarColisiones = [&](const RutaTick& rutas) {
         std::vector<ColisionDetalle> detalles;
         if (rutas.empty()) return detalles;
-        auto esBasePos = [&](const Pos& p) {
-            for (const auto& base : grid.bases) {
-                if (base.posicion == p) return true;
-            }
-            return false;
-        };
         int ticks = rutas[0].size();
+        std::vector<Pos> basePorDron(nDrones);
+        for (int d = 0; d < nDrones; ++d) {
+            basePorDron[d] = baseDeDron(d);
+        }
+        std::vector<int> primerMovimiento(nDrones, ticks);
+        for (int d = 0; d < nDrones; ++d) {
+            primerMovimiento[d] = primerTickFueraDeBase(d, rutas[d]);
+        }
         for (int t = 0; t < ticks; ++t) {
             std::map<Pos, std::vector<int>> ocupacion;
             for (int d = 0; d < nDrones; ++d) {
                 if (static_cast<size_t>(t) >= rutas[d].size()) continue;
                 Pos pos = rutas[d][t];
-                if (t == 0 && esBasePos(pos)) continue; // múltiples drones pueden partir de la misma base
+                if (t < primerMovimiento[d] && pos == basePorDron[d]) continue; // esperas iniciales en base no colisionan
                 ocupacion[pos].push_back(d);
             }
             // toda celda ocupada por más de un dron en el mismo tick es una colisión candidata
@@ -209,6 +219,9 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
             Pos posColision = (detalle.tick >= 0 && detalle.tick < static_cast<int>(rutaDron.size()))
                                   ? rutaDron[detalle.tick]
                                   : (!rutaDron.empty() ? rutaDron.back() : baseDeDron(dronWait));
+            Pos baseWait = baseDeDron(dronWait);
+            int tickDespegue = primerTickFueraDeBase(dronWait, rutaDron);
+            bool enInicio = tickColision <= tickDespegue;
             if (dronWait < 0 || dronWait >= nDrones)
                 continue;
             int idxInsert = 0;
@@ -217,7 +230,11 @@ std::vector<std::vector<Pos>> SimulatedAnnealing::ejecutar(const Grid &grid, int
                 idxInsert = std::clamp(static_cast<int>(ratio * static_cast<double>(vecino[dronWait].size())),
                                        0, static_cast<int>(vecino[dronWait].size()));
             }
-            vecino[dronWait].insert(vecino[dronWait].begin() + idxInsert, posColision);
+            if (enInicio) {
+                idxInsert = 0;
+            }
+            Pos posWait = enInicio ? baseWait : posColision;
+            vecino[dronWait].insert(vecino[dronWait].begin() + idxInsert, posWait);
             registrarCambio(dronWait, idxInsert);
         } else if (aplicarShift) {
             int d = rng() % nDrones;

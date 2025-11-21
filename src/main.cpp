@@ -114,10 +114,11 @@ int main(int argc, char* argv[]) {
     // se imprimen las rutas
     for (int d = 0; d < drones; ++d) {
         std::cout << "D" << d << ": B" << (d % grid.bases.size()) << " ";
-        for (const auto& p : rutasTick[d]) {
+        for (size_t i = 0; i < rutasTick[d].size(); ++i) {
+            const auto& p = rutasTick[d][i];
             std::cout << "(" << p.row << "," << p.col << ")";
 
-            if(p != rutasTick[d].back()) {
+            if (i + 1 < rutasTick[d].size()) {
                 std::cout << " - ";
             }
         }
@@ -135,6 +136,5 @@ int main(int argc, char* argv[]) {
     return 0;
     
 }
-
 
 

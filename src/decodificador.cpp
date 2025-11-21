@@ -57,6 +57,26 @@ bool Decodificador::hayColisiones(const RutaTick& rutas, const Grid& grid) {
     int T = rutas[0].size(); //ticks simulados en cada ruta.
     int nDrones = rutas.size();
     bool hayConflictos = false;
+    auto baseDeDron = [&](int d) {
+        if (grid.bases.empty()) return Pos(0, 0);
+        return grid.bases[d % grid.bases.size()].posicion;
+    };
+    std::vector<Pos> basePorDron(nDrones);
+    for (int d = 0; d < nDrones; ++d) {
+        basePorDron[d] = baseDeDron(d);
+    }
+    std::vector<int> primerMovimiento(nDrones, T);
+    for (int d = 0; d < nDrones; ++d) {
+        const auto& ruta = rutas[d];
+        int salida = static_cast<int>(ruta.size());
+        for (size_t t = 0; t < ruta.size(); ++t) {
+            if (ruta[t] != basePorDron[d]) {
+                salida = static_cast<int>(t);
+                break;
+            }
+        }
+        primerMovimiento[d] = salida;
+    }
 
     // iterar por tick y por dron
     for (int t = 0; t < T; ++t) {
@@ -65,17 +85,8 @@ bool Decodificador::hayColisiones(const RutaTick& rutas, const Grid& grid) {
         for (int d = 0; d < nDrones; ++d) {
             Pos pos = rutas[d][t];
 
-            // permitir múltiples drones en la misma base en tick 0
-            if (t == 0) {
-                bool esBase = false;
-                for (const auto& b : grid.bases) {
-                    if (pos == b.posicion) {
-                        esBase = true;
-                        break;
-                    }
-                }
-                if (esBase) continue;  // no se considera colisión
-            }
+            // permitir múltiples drones en la base mientras no despegan
+            if (t < primerMovimiento[d] && pos == basePorDron[d]) continue;
 
             if (!visitadas.insert(pos).second) {
                 hayConflictos = true;  // marcar conflicto pero seguir
@@ -95,6 +106,26 @@ int Decodificador::contarColisiones(const RutaTick& rutas, const Grid& grid) {
     int T = rutas[0].size();
     int nDrones = rutas.size();
     int colisiones = 0;
+    auto baseDeDron = [&](int d) {
+        if (grid.bases.empty()) return Pos(0, 0);
+        return grid.bases[d % grid.bases.size()].posicion;
+    };
+    std::vector<Pos> basePorDron(nDrones);
+    for (int d = 0; d < nDrones; ++d) {
+        basePorDron[d] = baseDeDron(d);
+    }
+    std::vector<int> primerMovimiento(nDrones, T);
+    for (int d = 0; d < nDrones; ++d) {
+        const auto& ruta = rutas[d];
+        int salida = static_cast<int>(ruta.size());
+        for (size_t t = 0; t < ruta.size(); ++t) {
+            if (ruta[t] != basePorDron[d]) {
+                salida = static_cast<int>(t);
+                break;
+            }
+        }
+        primerMovimiento[d] = salida;
+    }
 
     // para cada tick contador[pos] dirá cuántos drones están en esa celda en este tick.
     for (int t = 0; t < T; ++t) {
@@ -102,17 +133,8 @@ int Decodificador::contarColisiones(const RutaTick& rutas, const Grid& grid) {
         for (int d = 0; d < nDrones; ++d) {
             Pos pos = rutas[d][t];
 
-            //permitir múltiples drones en la misma base solo en tick 0
-            if (t == 0) {
-                bool esBase = false;
-                for (const auto& b : grid.bases) {
-                    if (pos == b.posicion) {
-                        esBase = true;
-                        break;
-                    }
-                }
-                if (esBase) continue;  // pasa al siguiente dron
-            }
+            // permitir múltiples drones en la misma base mientras no despegan
+            if (t < primerMovimiento[d] && pos == basePorDron[d]) continue;
 
             //si hay 3 drones en la misma celda se cuenta como 2 colisiones
             if (++contador[pos] > 1) ++colisiones;
