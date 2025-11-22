@@ -25,10 +25,10 @@
         "instancias/PSP-UAV_02_a.txt",
         "instancias/PSP-UAV_03_a.txt"
       ],
-      "iterations": [100],
-      "drones": [2, 4],
+      "iterations": [100000],
+      "drones": [2, 4, 6, 8, 10],
       "ticks": [50],
-      "repeats": 2,
+      "repeats": 5,
       "include_time_breakdown": false
     },
     {
@@ -38,10 +38,10 @@
         "instancias/PSP-UAV_02_b.txt",
         "instancias/PSP-UAV_03_b.txt"
       ],
-      "iterations": [100],
-      "drones": [2, 4],
+      "iterations": [100000],
+      "drones": [2, 4, 6, 8, 10],
       "ticks": [50],
-      "repeats": 2,
+      "repeats": 5,
       "include_time_breakdown": false
     },
     {
@@ -51,10 +51,10 @@
         "instancias/PSP-UAV_02_a.txt",
         "instancias/PSP-UAV_03_a.txt"
       ],
-      "iterations": [1000],
+      "iterations": [100000],
       "drones": [5],
-      "ticks": [50, 100, 200],
-      "repeats": 2,
+      "ticks": [50, 100, 200, 500],
+      "repeats": 5,
       "include_time_breakdown": false
     },
     {
@@ -64,10 +64,10 @@
         "instancias/PSP-UAV_02_b.txt",
         "instancias/PSP-UAV_03_b.txt"
       ],
-      "iterations": [100],
+      "iterations": [100000],
       "drones": [5],
-      "ticks": [50, 100, 200],
-      "repeats": 2,
+      "ticks": [50, 100, 200, 500],
+      "repeats": 5,
       "include_time_breakdown": false
     },
     {
@@ -77,10 +77,10 @@
         "instancias/PSP-UAV_02_a.txt",
         "instancias/PSP-UAV_03_a.txt"
       ],
-      "iterations": [10, 30, 100, 500, 1000],
+      "iterations": [10000, 30000, 70000, 100000, 150000],
       "drones": [5],
       "ticks": [50],
-      "repeats": 3,
+      "repeats": 5,
       "include_time_breakdown": false,
       "export_data": false
     },
@@ -91,10 +91,10 @@
         "instancias/PSP-UAV_02_b.txt",
         "instancias/PSP-UAV_03_b.txt"
       ],
-      "iterations": [10, 30, 100, 500, 1000],
+      "iterations": [10000, 30000, 70000, 100000, 150000],
       "drones": [5],
       "ticks": [50],
-      "repeats": 3,
+      "repeats": 5,
       "include_time_breakdown": false,
       "export_data": false
     }
