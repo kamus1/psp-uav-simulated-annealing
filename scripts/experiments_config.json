@@ -1,0 +1,102 @@
+{
+  "defaults": {
+    "instances": [
+      "instancias/PSP-UAV_01_a.txt",
+      "instancias/PSP-UAV_01_b.txt",
+      "instancias/PSP-UAV_02_a.txt",
+      "instancias/PSP-UAV_02_b.txt",
+      "instancias/PSP-UAV_03_a.txt",
+      "instancias/PSP-UAV_03_b.txt"
+    ],
+    "iterations": [1000, 3000],
+    "iterations_by_instance": {},
+    "drones": [2, 3],
+    "ticks": [50],
+    "repeats": 3,
+    "export_data": false,
+    "include_time_breakdown": false,
+    "export_csv": true
+  },
+  "experiments": [
+    {
+      "name": "tiempo_vs_drones_a",
+      "instances": [
+        "instancias/PSP-UAV_01_a.txt",
+        "instancias/PSP-UAV_02_a.txt",
+        "instancias/PSP-UAV_03_a.txt"
+      ],
+      "iterations": [100],
+      "drones": [2, 4],
+      "ticks": [50],
+      "repeats": 2,
+      "include_time_breakdown": false
+    },
+    {
+      "name": "tiempo_vs_drones_b",
+      "instances": [
+        "instancias/PSP-UAV_01_b.txt",
+        "instancias/PSP-UAV_02_b.txt",
+        "instancias/PSP-UAV_03_b.txt"
+      ],
+      "iterations": [100],
+      "drones": [2, 4],
+      "ticks": [50],
+      "repeats": 2,
+      "include_time_breakdown": false
+    },
+    {
+      "name": "tiempo_vs_ticks_a",
+      "instances": [
+        "instancias/PSP-UAV_01_a.txt",
+        "instancias/PSP-UAV_02_a.txt",
+        "instancias/PSP-UAV_03_a.txt"
+      ],
+      "iterations": [1000],
+      "drones": [5],
+      "ticks": [50, 100, 200],
+      "repeats": 2,
+      "include_time_breakdown": false
+    },
+    {
+      "name": "tiempo_vs_ticks_b",
+      "instances": [
+        "instancias/PSP-UAV_01_b.txt",
+        "instancias/PSP-UAV_02_b.txt",
+        "instancias/PSP-UAV_03_b.txt"
+      ],
+      "iterations": [100],
+      "drones": [5],
+      "ticks": [50, 100, 200],
+      "repeats": 2,
+      "include_time_breakdown": false
+    },
+    {
+      "name": "valor_vs_iteraciones_a",
+      "instances": [
+        "instancias/PSP-UAV_01_a.txt",
+        "instancias/PSP-UAV_02_a.txt",
+        "instancias/PSP-UAV_03_a.txt"
+      ],
+      "iterations": [10, 30, 100, 500, 1000],
+      "drones": [5],
+      "ticks": [50],
+      "repeats": 3,
+      "include_time_breakdown": false,
+      "export_data": false
+    },
+    {
+      "name": "valor_vs_iteraciones_b",
+      "instances": [
+        "instancias/PSP-UAV_01_b.txt",
+        "instancias/PSP-UAV_02_b.txt",
+        "instancias/PSP-UAV_03_b.txt"
+      ],
+      "iterations": [10, 30, 100, 500, 1000],
+      "drones": [5],
+      "ticks": [50],
+      "repeats": 3,
+      "include_time_breakdown": false,
+      "export_data": false
+    }
+  ]
+}

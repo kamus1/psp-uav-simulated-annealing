@@ -23,8 +23,27 @@ void RutaPlanner::actualizar(const std::vector<std::vector<Pos>>& secuencias,
         if (d >= static_cast<int>(cambiosDesde.size())) break;
         int idx = cambiosDesde[d];
         if (idx < 0) continue;
-        int tickInicio = tickInicioDesde(d, idx);
-        simularDron(d, idx, tickInicio, secuencias);
+
+        // Si el objetivo de inicio de recalculo es desconocido (nuevo frente
+        // al historial) o está al inicio, se recalcula completo; de lo
+        // contrario se aprovecha el prefijo previo.
+        bool inicioDesconocido = (idx <= 0);
+        if (!inicioDesconocido) {
+            if (d >= static_cast<int>(inicioObjetivo_.size())) {
+                inicioDesconocido = true;
+            } else {
+                const auto& inicios = inicioObjetivo_[d];
+                inicioDesconocido = idx >= static_cast<int>(inicios.size()) || inicios[idx] == -1;
+            }
+        }
+
+        int objetivoInicio = inicioDesconocido ? 0 : idx;
+        int tickInicio = inicioDesconocido ? 0 : tickInicioDesde(d, idx);
+        if (inicioDesconocido) {
+            tickIdle_[d] = 0;
+        }
+
+        simularDron(d, objetivoInicio, tickInicio, secuencias);
     }
 }
 

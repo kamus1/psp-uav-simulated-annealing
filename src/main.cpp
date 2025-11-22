@@ -93,12 +93,15 @@ int main(int argc, char* argv[]) {
 
     // se evalua la mejor secuencia con la funcion Evaluador::evaluar para entregar resultado final
     int score = Evaluador::evaluar(grid, mejorSecuencia, T);
+    auto rutasTick = Decodificador::generarRutaPorTick(grid, mejorSecuencia, T);
+    int colisionesFinales = Decodificador::contarColisiones(rutasTick, grid);
 
     std::cout << "\nResultado final:\n";
     std::cout << "Urgencia acumulada: " << score << "\n";
     std::cout << "Ventana de operación T: " << T << "\n";
     std::cout << "Drones Utilizados: " << drones << "\n"; 
     std::cout << "Tiempo de ejecución: " << segundos << " segundos\n";
+    std::cout << "Colisiones detectadas: " << colisionesFinales << "\n";
     if (mostrarTiempos) {
         std::cout << std::fixed << std::setprecision(6);
         std::cout << "Tiempo acumulado Evaluador: " << TimeStats::totalEvaluador() << " segundos\n";
@@ -109,8 +112,6 @@ int main(int argc, char* argv[]) {
 
 
     // se utiliza el decodificador para generar las rutas
-    auto rutasTick = Decodificador::generarRutaPorTick(grid, mejorSecuencia, T);
-
     // se imprimen las rutas
     for (int d = 0; d < drones; ++d) {
         std::cout << "D" << d << ": B" << (d % grid.bases.size()) << " ";
@@ -136,5 +137,4 @@ int main(int argc, char* argv[]) {
     return 0;
     
 }
-
 

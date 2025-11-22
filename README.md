@@ -27,7 +27,22 @@ Genera el ejecutable `./PSP-UAV`.
 
 
 ## Salida
-En consola se imprime la urgencia acumulada, la ventana T usada, la cantidad de drones, el tiempo de ejecución y la ruta completa de cada dron (indicando su base de origen). Con `--export` se generan los CSV mencionados en la carpeta `exported_data/`.
+En consola se imprime la urgencia acumulada, la ventana T usada, la cantidad de drones, el tiempo de ejecución, las colisiones detectadas y la ruta completa de cada dron (indicando su base de origen). Con `--export` se generan los CSV mencionados en la carpeta `exported_data/`.
 
 
 Se puede visualizar el resultado con el código de `visualization.ipynb`
+
+## Automatización de pruebas
+Se agregó `scripts/run_experiments.py` para crear runs por lotes y guardar resultados en `experiments/`. La configuración es en `scripts/experiments_config.json`
+
+1. Ajustes del JSON:
+   - En `defaults` se puede definir `instances`, `iterations`, `iterations_by_instance`, `drones`, `ticks`, `repeats`, `export_data`, `include_time_breakdown`, `export_csv`.
+   - En `experiments` se agregan objetos con `name` y overrides de esos campos. 
+2. Ejecutar:
+   ```bash
+   python3 scripts/run_experiments.py          # usa scripts/experiments_config.json
+   # o con otro archivo:
+   python3 scripts/run_experiments.py --config path/a/mi_config.json
+   ```
+   Si el binario `PSP-UAV` no existe, el script corre `make` automáticamente.
+3. Por cada experimento se generan `run_TIMESTAMP_<nombre>.txt` y (si `export_csv=true`) `run_TIMESTAMP_<nombre>.csv` con columnas: `experiment,instance,instance_variant,drones,iterations,ticks,repeat,urgencia,colisiones,tiempo_s,...`
